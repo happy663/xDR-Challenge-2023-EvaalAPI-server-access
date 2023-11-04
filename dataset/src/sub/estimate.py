@@ -779,11 +779,6 @@ def output_estimate_trajectory_include_ble(
     # correct_unpassable_displacementにカラムを追加
     correct_unpassable_displacement['floor'] = floor_name
 
-    # txtファイルに出力
-    # headerはなし
-    correct_unpassable_displacement.to_csv(
-        f'{output_directory}txt/{output_name}.txt', index=False, header=False)
-
 
 def output_estimate_trajectory_pdr(
     log_file_directory: str, log_file_name: str, output_directory: str, output_name: str
