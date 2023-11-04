@@ -1,0 +1,8 @@
+*.DS_Store
+/trials
+/gt
+/src/output/image
+*.zip
+/secret
+token.json
+__pycache__/

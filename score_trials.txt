@@ -1,0 +1,27 @@
+S523bcee967901
+S523bcee967902
+S523bcee967903
+S523bcee967904
+S523bcee967905
+S523bcee967906
+S523bcee967907
+S523bcee967908
+S523bcee967909
+S523bcee967910
+S523bcee967911
+S523bcee967912
+
+
+./run_trial_process.sh S523bcee967901 pdr
+./run_trial_process.sh S523bcee967902 pdr
+./run_trial_process.sh S523bcee967903 pdr
+./run_trial_process.sh S523bcee967904 pdr
+./run_trial_process.sh S523bcee967905 pdr
+./run_trial_process.sh S523bcee967906 pdr
+
+./run_trial_process.sh S523bcee967907 ble
+./run_trial_process.sh S523bcee967908 ble
+./run_trial_process.sh S523bcee967909 ble
+./run_trial_process.sh S523bcee967910 ble
+./run_trial_process.sh S523bcee967911 ble
+./run_trial_process.sh S523bcee967912 ble
