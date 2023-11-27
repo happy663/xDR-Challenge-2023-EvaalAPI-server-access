@@ -25,3 +25,5 @@ S523bcee967912
 ./run_trial_process.sh S523bcee967910 ble
 ./run_trial_process.sh S523bcee967911 ble
 ./run_trial_process.sh S523bcee967912 ble
+
+

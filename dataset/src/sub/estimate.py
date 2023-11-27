@@ -17,16 +17,36 @@ FLOOR_NAMES = ["FLU01", "FLU02", "FLD01"]
 FOLDER_ID = "1qZBLQ66_pwRwLOy3Zj5q_qAwY_Z05HXb"
 
 
+def is_vertical_or_horizontal(angle, rotate_angle=0.0):
+    rotated_angle = (angle + rotate_angle) % (2 * np.pi)
+
+    is_vertical = (
+        ((rotated_angle >= np.pi / 2 - 0.1) & (rotated_angle <= np.pi / 2 + 0.1)) |
+        ((rotated_angle >= 3*np.pi / 2 - 0.1) &
+         (rotated_angle <= 3*np.pi / 2 + 0.1))
+    )
+
+    is_horizontal = (
+        ((rotated_angle <= 0.1) | (rotated_angle >= 2*np.pi-0.1)) |
+        ((rotated_angle >= np.pi - 0.1) & (rotated_angle <= np.pi + 0.1))
+    )
+
+    return is_vertical or is_horizontal
+
+
 def convert_to_peek_angle_and_compute_displacement_by_angle(
     angle: pd.DataFrame, acc: pd.DataFrame, peaks: np.ndarray, step_length: float, initial_point: dict[str, float], initial_timestamp: float = 0.0
 ):
-
     # 歩行タイミング時の角度をmatch_data関数を用いて取得
     angle_in_step_timing = match_data(angle, acc.ts[peaks])
 
     # 累積変位を計算
     cumulative_displacement_df = calculate_cumulative_displacement(
         angle_in_step_timing.ts, angle_in_step_timing['x'], step_length, initial_point, initial_timestamp)
+
+    cumulative_displacement_df['is_vertical_or_horizontal'] = angle_in_step_timing['x'].apply(
+        is_vertical_or_horizontal
+    )
 
     return cumulative_displacement_df
 
@@ -35,7 +55,6 @@ def convert_to_peek_angle_and_compute_displacement_by_gyro(gyro: pd.DataFrame, a
    # 角速度から歩行タイミングの角度を計算
     angle_in_step_timing = convert_to_peek_angle(
         gyro, acc, peaks)
-    print(angle_in_step_timing)
 
     cumulative_displacement_df = calculate_cumulative_displacement(
         angle_in_step_timing.ts, angle_in_step_timing['x'], step_length, initial_point, initial_timestamp)
@@ -246,6 +265,10 @@ def search_optimal_angle(displacement_df: pd.DataFrame, gt_ref: pd.DataFrame, st
         angle_and_euclidean_list.append(
             {"angle": angle, "total_euclidean_distance": total_euclidean_distance})
 
+    # for文でangle_and_euclidean_listをソートして表示
+    print(sorted(angle_and_euclidean_list,
+                 key=lambda x: x['angle']))
+
     # 一番ユークリッド距離が小さいangleとeuclidean_distanceを取得
     angle_and_euclidean = min(angle_and_euclidean_list,
                               key=lambda x: x['total_euclidean_distance'])
@@ -431,7 +454,10 @@ def search_optimal_drift_from_angle(angle: pd.DataFrame, gt_ref: pd.DataFrame):
         drift_and_euclidean_list.append(
             {"drift": drift, "euclidean_distance": euclidean_distance})
 
-    print(drift_and_euclidean_list)
+    # drift_and_euclidean_listソートして表示
+    print(sorted(drift_and_euclidean_list,
+          key=lambda x: x['euclidean_distance']))
+
     # 一番ユークリッド距離が小さいドリフトを取得
     optimal_drift_and_euclidean = min(
         drift_and_euclidean_list, key=lambda x: x['euclidean_distance'])
@@ -547,6 +573,7 @@ def find_best_alignment_angle(angle_df: pd.DataFrame, gt_ref: pd.DataFrame, edit
     df_results = pd.DataFrame(results).sort_values(
         by="horizontal_and_vertical_count", ascending=False)
     df_results.reset_index(inplace=True, drop=True)
+    print(df_results)
 
     df_results = calculate_exist_counts(
         angle_df, df_results, gt_ref, edit_map_dict, floor_name, dx, dy)
@@ -939,4 +966,4 @@ def output_estimate_trajectory_pdr(
     # txtファイルに出力
     # headerはなし
     correct_unpassable_displacement.to_csv(
-        f'{output_directory}txt/{output_name}.txt', index=False, header=False)
+        f'{output_directory}txt/{output_name}.csv', index=False, header=False)
