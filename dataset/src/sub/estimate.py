@@ -35,8 +35,10 @@ def is_vertical_or_horizontal(angle, rotate_angle=0.0):
 
 
 def convert_to_peek_angle_and_compute_displacement_by_angle(
-    angle: pd.DataFrame, acc: pd.DataFrame, peaks: np.ndarray, step_length: float, initial_point: dict[str, float], initial_timestamp: float = 0.0
+    angle: pd.DataFrame, acc: pd.DataFrame,  step_length: float, initial_point: dict[str, float], initial_timestamp: float = 0.0
 ):
+
+    peaks, _ = find_peaks(acc['rolling_norm'], height=12)
     # 歩行タイミング時の角度をmatch_data関数を用いて取得
     angle_in_step_timing = match_data(angle, acc.ts[peaks])
 
@@ -62,11 +64,11 @@ def convert_to_peek_angle_and_compute_displacement_by_gyro(gyro: pd.DataFrame, a
     return cumulative_displacement_df
 
 
-def match_data(angle_df: pd.DataFrame, peek_t: pd.Series):
+def match_data(gyro_df: pd.DataFrame, peek_t: pd.Series):
     matched_df = pd.DataFrame()
     for t in peek_t:
-        matched_row = angle_df[np.isclose(
-            angle_df['ts'], t, atol=0.005)]
+        matched_row = gyro_df[np.isclose(
+            gyro_df['ts'], t, atol=0.005)]
         matched_df = pd.concat([matched_df, matched_row])
     return matched_df
 
@@ -265,10 +267,6 @@ def search_optimal_angle(displacement_df: pd.DataFrame, gt_ref: pd.DataFrame, st
         angle_and_euclidean_list.append(
             {"angle": angle, "total_euclidean_distance": total_euclidean_distance})
 
-    # for文でangle_and_euclidean_listをソートして表示
-    print(sorted(angle_and_euclidean_list,
-                 key=lambda x: x['angle']))
-
     # 一番ユークリッド距離が小さいangleとeuclidean_distanceを取得
     angle_and_euclidean = min(angle_and_euclidean_list,
                               key=lambda x: x['total_euclidean_distance'])
@@ -361,6 +359,7 @@ def convert_to_peek_angle(gyro: pd.DataFrame, acc: pd.DataFrame, peaks: np.ndarr
     # 角速度から角度に変換
     angle_copy['ts'] = gyro_copy['ts']
     angle_copy['x'] = gyro_copy['x'].cumsum() * 0.01
+
     peek_angle = match_data(angle_copy, acc.ts[peaks])
 
     return peek_angle
@@ -379,8 +378,7 @@ def convert_to_angle_from_gyro(gyro: pd.DataFrame):
 def convert_to_angle_from_cumulative_displacement(cumulative_displacement_df: pd.DataFrame):
     # コピーの作成
     cumulative_displacement_df_copy = cumulative_displacement_df.copy()
-
-    # x方向とy方向の変位（累積変位の差分）を計算
+# x方向とy方向の変位（累積変位の差分）を計算
     delta_x = cumulative_displacement_df_copy['x_displacement'].diff()
     delta_y = cumulative_displacement_df_copy['y_displacement'].diff()
 
@@ -439,7 +437,6 @@ def search_optimal_drift_from_angle(angle: pd.DataFrame, gt_ref: pd.DataFrame):
         angle_copy = original_angle.copy()
 
         elapsed_time = angle_copy['ts'] - angle_copy['ts'].iloc[0]
-
         # ドリフトを経過時間に応じて増加させる
         angle_copy['x'] -= drift * elapsed_time
 
@@ -453,10 +450,6 @@ def search_optimal_drift_from_angle(angle: pd.DataFrame, gt_ref: pd.DataFrame):
             (last_row['x_displacement'].values[0]-gt_ref.x[1])**2 + (last_row['y_displacement'].values[0]-gt_ref.y[1])**2)
         drift_and_euclidean_list.append(
             {"drift": drift, "euclidean_distance": euclidean_distance})
-
-    # drift_and_euclidean_listソートして表示
-    print(sorted(drift_and_euclidean_list,
-          key=lambda x: x['euclidean_distance']))
 
     # 一番ユークリッド距離が小さいドリフトを取得
     optimal_drift_and_euclidean = min(
@@ -475,6 +468,7 @@ def is_passable(passable_dict, floor_name, x, y, dx, dy):
     row = int((x+epsilon) / dx)
     col = int((y+epsilon) / dy)
 
+    #  numpy配列の範囲外にアクセスしようとした場合はFalseを返す
     if row < 0 or col < 0 or row >= passable_dict[floor_name].shape[0] or col >= passable_dict[floor_name].shape[1]:
         return False
 
@@ -567,17 +561,14 @@ def correct_unpassable_points(cumulative_displacement_df: pd.DataFrame, map_dict
 
 def find_best_alignment_angle(angle_df: pd.DataFrame, gt_ref: pd.DataFrame, edit_map_dict, floor_name, dx, dy):
     angle_range = np.arange(0, 2*np.pi, 0.01)
-
     results = [calculate_horizontal_and_vertical_counts(
         angle_df, rotate_angle) for rotate_angle in angle_range]
     df_results = pd.DataFrame(results).sort_values(
         by="horizontal_and_vertical_count", ascending=False)
     df_results.reset_index(inplace=True, drop=True)
-    print(df_results)
 
     df_results = calculate_exist_counts(
         angle_df, df_results, gt_ref, edit_map_dict, floor_name, dx, dy)
-
     optimal_angle = get_optimal_angle(df_results)
 
     return optimal_angle
@@ -585,7 +576,6 @@ def find_best_alignment_angle(angle_df: pd.DataFrame, gt_ref: pd.DataFrame, edit
 
 def calculate_horizontal_and_vertical_counts(angle_df: pd.DataFrame, rotate_angle: float) -> dict:
     rotated_angle = (angle_df['x'] + rotate_angle) % (2 * np.pi)
-
     vertical_count = len(rotated_angle[
         ((rotated_angle >= np.pi / 2 - 0.1) & (rotated_angle <= np.pi / 2 + 0.1)) |
         ((rotated_angle >= 3*np.pi / 2 - 0.1) &
@@ -805,6 +795,11 @@ def output_estimate_trajectory_include_ble(
 
     # correct_unpassable_displacementにカラムを追加
     correct_unpassable_displacement['floor'] = floor_name
+
+    correct_unpassable_displacement.to_csv(
+        f'{output_directory}txt/{output_name}.csv', index=False, header=False)
+
+    print(f'{output_directory}txt/{output_name}.csv')
 
 
 def output_estimate_trajectory_pdr(

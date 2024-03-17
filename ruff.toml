@@ -1,0 +1,6 @@
+extend-include = ["*.ipynb"]
+select = ["ALL"]
+ignore = [
+    "E501",    # line too long, handled by black
+    "PLR0913",
+]
