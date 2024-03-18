@@ -1,9 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-
-q = [0.1946025136148841, 0.2883167955284461,
-     0.324667150317451, 0.8795423874160202]
+q = [0.1946025136148841, 0.2883167955284461, 0.324667150317451, 0.8795423874160202]
 
 
 def extract_rotation(quaternions):
@@ -13,5 +11,5 @@ def extract_rotation(quaternions):
 
 
 print(
-    extract_rotation(q)
+    extract_rotation(q),
 )

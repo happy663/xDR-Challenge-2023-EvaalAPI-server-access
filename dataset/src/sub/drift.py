@@ -4,11 +4,15 @@ import os
 import sys
 
 import numpy as np
-import pandas as pd
 
 # fmt: off
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+from typing import TYPE_CHECKING
+
 import estimate
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 # fmt: on
 
@@ -60,7 +64,7 @@ def _search_optimal_drift_from_angle(
                 gt_ref["%time"][0],
             )
         )
-        displacement_df.reset_index(inplace=True, drop=True)
+        displacement_df = displacement_df.reset_index(drop=True)
 
         euclidean_distance = _compute_euclidean_distance(
             displacement_df,

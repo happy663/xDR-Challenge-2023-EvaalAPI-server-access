@@ -155,6 +155,9 @@ if __name__ == "__main__":
     data = read_log_data(log_file_path)
     acc, gyro, mgf, gt_ref = _convert_to_dataframes(data)
     map_dict = load_floor_maps(FLOOR_NAMES, "../../gis/")
+
     first_point = {"x": 0, "y": 0}
+    # true_point = {"x": gt_ref["x"][0], "y": gt_ref["y"][0]}  # noqa: ERA001
+
     trajectory = estimate_trajectory(acc, gyro, first_point)
-    utils.plot_displacement_map_paper(map_dict, "FLU01", 0.01, 0.01, trajectory)
+    utils.plot_displacement_map(map_dict, "FLU01", 0.01, 0.01, trajectory)
