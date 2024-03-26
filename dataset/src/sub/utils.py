@@ -4,17 +4,17 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy.spatial.transform import Rotation as R
 
 if TYPE_CHECKING:
     import pandas as pd
 
-# fmt: off
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-
-# fmt: on
+from scipy.signal import find_peaks
 
 
 def plot_displacement_map(
@@ -47,7 +47,7 @@ def plot_displacement_map(
     xmax = map_dict[floor_name].shape[0] * dx
     ymax = map_dict[floor_name].shape[1] * dy
 
-    plt.figure(figsize=[10, 10])
+    plt.figure(figsize=[5, 5])
     plt.axis("equal")
     plt.xlim(x_min, xmax)
     plt.ylim(y_min, ymax)
@@ -83,7 +83,7 @@ def plot_displacement_map(
 
 # これは軌跡前半はドリフトが乗りづらいため
 # 時間全体の中央を変数に入れる
-def extract_rotation(quaternions: np.ndarray) -> float:
+def extract_rotation(quaternions: list[float]) -> float:
     """Extract the rotation angle from a quaternion.
 
     Parameters
@@ -100,3 +100,45 @@ def extract_rotation(quaternions: np.ndarray) -> float:
     res = R.from_quat(quaternions).apply([1, 0, 0])
 
     return np.arctan2(res[1], res[0])
+
+
+# def _match_data(something_df: pd.DataFrame, peek_ts_df: pd.Series) -> pd.DataFrame:
+#     matched_df = pd.merge_asof(
+#         peek_ts_df,
+#         something_df,
+#         on="ts",
+#         direction="nearest",
+#         tolerance=pd.Timedelta("100ms"),
+#     )
+#     return matched_df
+
+
+def _match_data(something_df: pd.DataFrame, peek_t: pd.Series):
+    matched_df = pd.DataFrame()
+    for t in peek_t:
+        matched_row = something_df[np.isclose(something_df["ts"], t, atol=0.005)]
+        matched_df = pd.concat([matched_df, matched_row])
+    return matched_df
+
+
+def convert_to_peek_angle(acc_df: pd.DataFrame, angle_df: pd.DataFrame) -> pd.DataFrame:
+    """Convert accelerometer data to peak angle data.
+
+    Parameters
+    ----------
+    acc_df : pd.DataFrame
+        DataFrame containing accelerometer data.
+    angle_df : pd.DataFrame
+        DataFrame containing angle data.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the matched data.
+
+    """
+    peaks, _ = find_peaks(acc_df["rolling_norm"], height=12, distance=10)
+    # acc_dfのpeaksに対応するdfを表示
+    peak_df = acc_df.iloc[peaks]
+
+    return _match_data(angle_df, peak_df["ts"])

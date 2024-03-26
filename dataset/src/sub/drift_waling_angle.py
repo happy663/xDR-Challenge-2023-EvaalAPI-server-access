@@ -36,8 +36,8 @@ def _compute_euclidean_distance(df: pd.DataFrame, gt: pd.Series) -> float:
 
 
 def _search_optimal_drift_from_angle(
-    acc_df: pd.DataFrame,
     angle_df: pd.DataFrame,
+    acc_df: pd.DataFrame,
     gt_ref: pd.DataFrame,
 ) -> dict:
     """角度のデータからドリフトを探索する."""

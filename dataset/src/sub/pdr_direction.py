@@ -9,6 +9,7 @@ import pandas as pd
 # fmt: off
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 import estimate
+import utils
 
 # fmt: on
 
@@ -84,7 +85,6 @@ def _get_optimal_angle(results: pd.DataFrame) -> float:
         .sort_values(by="horizontal_and_vertical_count", ascending=False)
         .iloc[0]
     )
-    print(optimal_result)
     return optimal_result["angle"]
 
 
@@ -131,7 +131,7 @@ def _find_best_alignment_angle(
         by="horizontal_and_vertical_count",
         ascending=False,
     )
-    df_results.reset_index(inplace=True, drop=True)
+    df_results = df_results.reset_index(drop=True)
     df_results = _calculate_exist_counts(
         angle_df,
         df_results,
@@ -141,15 +141,13 @@ def _find_best_alignment_angle(
         dx,
         dy,
     )
-    optimal_angle = _get_optimal_angle(df_results)
-
-    return optimal_angle
+    return _get_optimal_angle(df_results)
 
 
-def process_find_best_alignment_angle(
-    acc: pd.DataFrame,
+def find_best_direction(
+    acc_df: pd.DataFrame,
     angle_df: pd.DataFrame,
-    ground_truth: pd.DataFrame,
+    ground_truth_df: pd.DataFrame,
     edit_map_dict: dict[str, np.ndarray],
     floor_name: str,
     dx: float,
@@ -159,7 +157,7 @@ def process_find_best_alignment_angle(
 
     Args:
     ----
-        acc (pd.DataFrame): The accelerometer data.
+        acc_df (pd.DataFrame): The accelerometer data.
         angle_df (pd.DataFrame): The angle data.
         ground_truth (pd.DataFrame): The ground truth data.
         edit_map_dict (dict[str, np.ndarray]): The edit map dictionary.
@@ -172,9 +170,15 @@ def process_find_best_alignment_angle(
         tuple[pd.DataFrame, pd.DataFrame]: The straight angle and straight angle displacement.
 
     """
-    optimal_angle = _find_best_alignment_angle(
+    # 歩行タイミングの角度を求める
+    angle_df_in_step_timing = utils.convert_to_peek_angle(
+        acc_df,
         angle_df,
-        ground_truth,
+    )
+
+    optimal_angle = _find_best_alignment_angle(
+        angle_df_in_step_timing,
+        ground_truth_df,
         edit_map_dict,
         floor_name,
         dx,
@@ -191,10 +195,10 @@ def process_find_best_alignment_angle(
     straight_angle_displacement = (
         estimate.convert_to_peek_angle_and_compute_displacement_by_angle(
             straight_angle,
-            acc,
+            acc_df,
             0.5,
-            {"x": ground_truth.x[0], "y": ground_truth.y[0]},
-            ground_truth["%time"][0],
+            {"x": ground_truth_df.x[0], "y": ground_truth_df.y[0]},
+            ground_truth_df["%time"][0],
         )
     )
 
