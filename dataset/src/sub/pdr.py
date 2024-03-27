@@ -81,7 +81,7 @@ def read_log_data(log_file_path: str) -> dict:
             elif data_type == "POS3":
                 data["POS3"].append(
                     {
-                        "%time": float(line_contents[1]),
+                        "ts": float(line_contents[1]),
                         "x": float(line_contents[3]),
                         "y": float(line_contents[4]),
                         "z": float(line_contents[5]),
@@ -89,7 +89,7 @@ def read_log_data(log_file_path: str) -> dict:
                         "q1": float(line_contents[7]),
                         "q2": float(line_contents[8]),
                         "q3": float(line_contents[9]),
-                        "floor": line_contents[10],
+                        "floor_name": line_contents[10],
                     },
                 )
 
@@ -137,10 +137,36 @@ def convert_to_dataframes(
         },
     )
 
+    # ライダーデータのスキーマを定義
+    lidar_schema = pa.DataFrameSchema(
+        {
+            "ts": pa.Column(pa.Float, nullable=False),
+            "x": pa.Column(pa.Float, nullable=False),
+            "y": pa.Column(pa.Float, nullable=False),
+            "z": pa.Column(pa.Float, nullable=False),
+            "q0": pa.Column(pa.Float, nullable=False),
+            "q1": pa.Column(pa.Float, nullable=False),
+            "q2": pa.Column(pa.Float, nullable=False),
+            "q3": pa.Column(pa.Float, nullable=False),
+            "floor_name": pa.Column(pa.String, nullable=False),
+        },
+    )
+
+    # # bleデータのスキーマを定義
+    # ble_schema = pa.DataFrameSchema(
+    #     {
+    #         "ts": pa.Column(pa.Float, nullable=True),
+    #         "bdaddress": pa.Column(pa.String, nullable=True),
+    #         "rssi": pa.Column(pa.Int, nullable=True),
+    #     },
+    # )
+
     # バリデーション
     senser_schema(acc_df)
     senser_schema(gyro)
     senser_schema(mgf)
+    lidar_schema(gt_ref)
+    # ble_schema(blescans)
 
     return acc_df, gyro, mgf, gt_ref, blescans
 

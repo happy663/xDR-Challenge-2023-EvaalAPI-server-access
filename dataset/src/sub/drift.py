@@ -53,7 +53,7 @@ def _search_optimal_drift_from_angle(
                 acc_df,
                 0.5,
                 {"x": gt_ref.x[0], "y": gt_ref.y[0]},
-                gt_ref["%time"][0],
+                gt_ref["ts"][0],
             )
         )
         displacement_df = displacement_df.reset_index(drop=True)
@@ -114,7 +114,7 @@ def remove_drift_in_angle_df(
                 "x": ground_tooth_point_df.x[0],
                 "y": ground_tooth_point_df.y[0],
             },
-            ground_tooth_point_df["%time"][0],
+            ground_tooth_point_df["ts"][0],
         )
     )
 

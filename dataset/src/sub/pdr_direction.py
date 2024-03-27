@@ -59,7 +59,7 @@ def _calculate_exist_counts(
             (angle_df["x"] + row["angle"]),
             0.5,
             {"x": gt_ref.x[0], "y": gt_ref.y[0]},
-            gt_ref["%time"][0],
+            gt_ref["ts"][0],
         )
 
         exist_count = 0
@@ -148,11 +148,11 @@ def _find_best_alignment_angle(
 def rotate_trajectory_to_optimal_alignment(
     acc_df: pd.DataFrame,
     angle_df: pd.DataFrame,
-    ground_truth_df: pd.DataFrame,
     map_dict: dict[str, np.ndarray],
     floor_name: str,
     dx: float,
     dy: float,
+    ground_truth_df: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Process the finding of the best alignment angle.
 
@@ -171,6 +171,15 @@ def rotate_trajectory_to_optimal_alignment(
         tuple[pd.DataFrame, pd.DataFrame]: The straight angle and straight angle displacement.
 
     """
+    if ground_truth_df is None:
+        ground_truth_df = pd.DataFrame(
+            {
+                "x": [0],
+                "y": [0],
+                "ts": [0],
+            },
+        )
+
     if floor_name not in map_dict:
         msg = f"floor_name '{floor_name}' is not a valid key in edit_map_dict"
         raise ValueError(
@@ -205,7 +214,7 @@ def rotate_trajectory_to_optimal_alignment(
             acc_df,
             0.5,
             {"x": ground_truth_df.x[0], "y": ground_truth_df.y[0]},
-            ground_truth_df["%time"][0],
+            ground_truth_df["ts"][0],
         )
     )
 
