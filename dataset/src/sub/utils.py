@@ -23,12 +23,13 @@ def plot_displacement_map(
     dx: float,
     dy: float,
     displacement_df: pd.DataFrame,
+    *,
+    fig_size: tuple[int, int] | None = None,
+    display_map: bool = True,
     x_min: float = 0,
     y_min: float = 0,
     label_size: int = 10,
     font_size: int = 10,
-    *,
-    display_map: bool = True,
 ) -> None:
     """Plot a map with displacement data.
 
@@ -39,15 +40,22 @@ def plot_displacement_map(
     - dx: Width of each grid cell in meters
     - dy: Height of each grid cell in meters
     - displacement_df: DataFrame containing displacement data
+    - fig_size: Size of the figure (optional)
+    - display_map: Whether to display the map image (default: True)
     - x_min: Minimum x-coordinate value for the plot (default: 0)
     - y_min: Minimum y-coordinate value for the plot (default: 0)
-    - display_map: Whether to display the map image (default: True)
+    - label_size: Font size for labels (default: 10)
+    - font_size: Font size for axis labels (default: 10)
 
     """
+    if fig_size is not None:
+        plt.figure(figsize=fig_size)
+    else:
+        plt.figure(figsize=[5, 5])
+
     xmax = map_dict[floor_name].shape[0] * dx
     ymax = map_dict[floor_name].shape[1] * dy
 
-    plt.figure(figsize=[5, 5])
     plt.axis("equal")
     plt.xlim(x_min, xmax)
     plt.ylim(y_min, ymax)

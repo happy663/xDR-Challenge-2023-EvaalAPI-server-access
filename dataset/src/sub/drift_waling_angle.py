@@ -75,7 +75,7 @@ def _search_optimal_drift_from_angle(
 def remove_drift_from_angle(
     acc_df: pd.DataFrame,
     angle_df: pd.DataFrame,
-    ground_tooth_point_df: pd.DataFrame,
+    ground_truth_point_df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Remove drift from angle data.
 
@@ -83,7 +83,7 @@ def remove_drift_from_angle(
     ----
         acc_df (pd.DataFrame): Acceleration data.
         angle_df (pd.DataFrame): Angle data.
-        ground_tooth_point_df (pd.DataFrame): Ground tooth 2D coordinate data.
+        ground_truth_point_df (pd.DataFrame): Ground tooth 2D coordinate data.
 
     Returns:
     -------
@@ -94,7 +94,7 @@ def remove_drift_from_angle(
     optimal_drift_and_euclidean = _search_optimal_drift_from_angle(
         acc_df,
         angle_df,
-        ground_tooth_point_df,
+        ground_truth_point_df,
     )
 
     # ドリフトの除去の適用
@@ -111,10 +111,10 @@ def remove_drift_from_angle(
             acc_df,
             0.5,
             {
-                "x": ground_tooth_point_df.x[0],
-                "y": ground_tooth_point_df.y[0],
+                "x": ground_truth_point_df.x[0],
+                "y": ground_truth_point_df.y[0],
             },
-            ground_tooth_point_df["%time"][0],
+            ground_truth_point_df["%time"][0],
         )
     )
 

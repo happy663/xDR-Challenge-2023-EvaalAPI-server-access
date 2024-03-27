@@ -31,16 +31,18 @@ def _main() -> None:
     log_file_path = log_file_directory + log_file_name
     data = read_log_data(log_file_path)
 
-    acc_df, gyro, _, _, _ = convert_to_dataframes(data)
+    acc_df, gyro_df, _, ground_truth_df, _ = convert_to_dataframes(data)
     map_dict = load_floor_maps(FLOOR_NAMES, GIS_BASE_PATH)
 
-    first_point: dict[Axis2D, float] = {"x": 0.0, "y": 0.0}
-    # true_point = {"x": gt_ref["x"][0], "y": gt_ref["y"][0]}  # noqa: ERA001
+    true_point: dict[Axis2D, float] = {
+        "x": ground_truth_df["x"][0],
+        "y": ground_truth_df["y"][0],
+    }
 
-    trajectory, _ = estimate_trajectory_with_ground_tooth_first_point(
+    trajectory, _ = estimate_trajectory(
         acc_df,
-        gyro,
-        first_point,
+        gyro_df,
+        ground_truth_first_point=true_point,
     )
     utils.plot_displacement_map(map_dict, "FLU01", 0.01, 0.01, trajectory)
 
@@ -152,21 +154,11 @@ def convert_to_dataframes(
         },
     )
 
-    # # bleデータのスキーマを定義
-    # ble_schema = pa.DataFrameSchema(
-    #     {
-    #         "ts": pa.Column(pa.Float, nullable=True),
-    #         "bdaddress": pa.Column(pa.String, nullable=True),
-    #         "rssi": pa.Column(pa.Int, nullable=True),
-    #     },
-    # )
-
     # バリデーション
     senser_schema(acc_df)
     senser_schema(gyro)
     senser_schema(mgf)
     lidar_schema(gt_ref)
-    # ble_schema(blescans)
 
     return acc_df, gyro, mgf, gt_ref, blescans
 
@@ -212,40 +204,11 @@ def _process_sensor_data(
 Axis2D = Literal["x", "y"]
 
 
-def estimate_trajectory_with_ground_tooth_first_point(
-    acc_df: pd.DataFrame,
-    gyro_df: pd.DataFrame,
-    ground_tooth_first_point: dict[Axis2D, float],
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Estimate the trajectory with ground tooth as the first point.
-
-    Args:
-    ----
-        acc_df (pd.DataFrame): DataFrame containing accelerometer data.
-        gyro_df (pd.DataFrame): DataFrame containing gyroscope data.
-        ground_tooth_first_point (dict[Axis2D, float]): Dictionary containing the Axis2D and value of the ground tooth first point.
-
-    Returns:
-    -------
-        tuple[pd.DataFrame, pd.DataFrame]: Tuple containing the estimated trajectory and estimated angle.
-
-    """
-    acc_df, peaks = _process_sensor_data(acc_df)
-    # ジャイロデータを用いてステップタイミングでの角度を推定
-    peek_angle = estimate.convert_to_peek_angle(gyro_df, acc_df, peaks)
-    # 累積変位の計算
-    return estimate.calculate_cumulative_displacement(
-        peek_angle.ts,
-        peek_angle["x"],
-        0.5,
-        {"x": ground_tooth_first_point["x"], "y": ground_tooth_first_point["y"]},
-        0.0,
-    ), peek_angle
-
-
 def estimate_trajectory(
     acc_df: pd.DataFrame,
     gyro_df: pd.DataFrame,
+    *,
+    ground_truth_first_point: dict[Axis2D, float] | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Estimate the trajectory using accelerometer and gyroscope data.
 
@@ -253,12 +216,16 @@ def estimate_trajectory(
     ----
         acc_df (pd.DataFrame): DataFrame containing accelerometer data.
         gyro_df (pd.DataFrame): DataFrame containing gyroscope data.
+        ground_truth_first_point (dict[Axis2D, float] | None): Dictionary containing the first point of the ground truth trajectory.
 
     Returns:
     -------
         tuple[pd.DataFrame, pd.DataFrame]: Tuple containing the estimated trajectory and estimated angle.
 
     """
+    if ground_truth_first_point is None:
+        ground_truth_first_point = {"x": 0.0, "y": 0.0}
+
     acc_df, peaks = _process_sensor_data(acc_df)
     # ジャイロデータを用いてステップタイミングでの角度を推定
     peek_angle = estimate.convert_to_peek_angle(gyro_df, acc_df, peaks)
@@ -267,7 +234,10 @@ def estimate_trajectory(
         peek_angle.ts,
         peek_angle["x"],
         0.5,
-        {"x": 0, "y": 0},
+        {
+            "x": ground_truth_first_point["x"],
+            "y": ground_truth_first_point["y"],
+        },
         0.0,
     ), peek_angle
 

@@ -4,6 +4,7 @@ import sys
 
 # fmt: off
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -47,19 +48,18 @@ def _calculate_horizontal_and_vertical_counts(
 def _calculate_exist_counts(
     angle_df: pd.DataFrame,
     results: pd.DataFrame,
-    gt_ref: pd.DataFrame,
     edit_map_dict: dict[str, np.ndarray],
     floor_name: str,
     dx: float,
     dy: float,
+    ground_truth_first_point: dict[Axis2D, float],
 ) -> pd.DataFrame:
     for i, row in results.head(20).iterrows():
         rotated_displacement = estimate.calculate_cumulative_displacement(
             angle_df.ts,
             (angle_df["x"] + row["angle"]),
             0.5,
-            {"x": gt_ref.x[0], "y": gt_ref.y[0]},
-            gt_ref["ts"][0],
+            {"x": ground_truth_first_point["x"], "y": ground_truth_first_point["y"]},
         )
 
         exist_count = 0
@@ -117,11 +117,11 @@ def _is_passable(
 
 def _find_best_alignment_angle(
     angle_df: pd.DataFrame,
-    gt_ref: pd.DataFrame,
     edit_map_dict: dict[str, np.ndarray],
     floor_name: str,
     dx: float,
     dy: float,
+    ground_truth_first_point: dict[Axis2D, float],
 ) -> float:
     angle_range = np.arange(0, 2 * np.pi, 0.01)
     results = [
@@ -136,13 +136,16 @@ def _find_best_alignment_angle(
     df_results = _calculate_exist_counts(
         angle_df,
         df_results,
-        gt_ref,
         edit_map_dict,
         floor_name,
         dx,
         dy,
+        ground_truth_first_point,
     )
     return _get_optimal_angle(df_results)
+
+
+Axis2D = Literal["x", "y"]
 
 
 def rotate_trajectory_to_optimal_alignment(
@@ -152,7 +155,8 @@ def rotate_trajectory_to_optimal_alignment(
     floor_name: str,
     dx: float,
     dy: float,
-    ground_truth_df: pd.DataFrame | None = None,
+    *,
+    ground_truth_first_point: dict[Axis2D, float] | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Process the finding of the best alignment angle.
 
@@ -160,25 +164,19 @@ def rotate_trajectory_to_optimal_alignment(
     ----
         acc_df (pd.DataFrame): The accelerometer data.
         angle_df (pd.DataFrame): The angle data.
-        ground_truth_df (pd.DataFrame): The ground truth data.
         map_dict (dict[str, np.ndarray]): The edit map dictionary.
         floor_name (str): The floor name.
         dx (float): The x-axis resolution.
         dy (float): The y-axis resolution.
+        ground_truth_first_point (dict[Axis2D, float] | None, optional): The first point of the ground truth. Defaults to None.
 
     Returns:
     -------
         tuple[pd.DataFrame, pd.DataFrame]: The straight angle and straight angle displacement.
 
     """
-    if ground_truth_df is None:
-        ground_truth_df = pd.DataFrame(
-            {
-                "x": [0],
-                "y": [0],
-                "ts": [0],
-            },
-        )
+    if ground_truth_first_point is None:
+        ground_truth_first_point = {"x": 0.0, "y": 0.0}
 
     if floor_name not in map_dict:
         msg = f"floor_name '{floor_name}' is not a valid key in edit_map_dict"
@@ -194,11 +192,11 @@ def rotate_trajectory_to_optimal_alignment(
 
     optimal_angle = _find_best_alignment_angle(
         angle_df_in_step_timing,
-        ground_truth_df,
         map_dict,
         floor_name,
         dx,
         dy,
+        ground_truth_first_point,
     )
 
     straight_angle = pd.DataFrame(
@@ -213,8 +211,7 @@ def rotate_trajectory_to_optimal_alignment(
             straight_angle,
             acc_df,
             0.5,
-            {"x": ground_truth_df.x[0], "y": ground_truth_df.y[0]},
-            ground_truth_df["ts"][0],
+            {"x": ground_truth_first_point["x"], "y": ground_truth_first_point["y"]},
         )
     )
 
