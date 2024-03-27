@@ -5,6 +5,8 @@ import sys
 from collections import defaultdict
 from typing import Literal
 
+import pandera as pa
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 import estimate
@@ -71,7 +73,6 @@ def read_log_data(log_file_path: str) -> dict:
             elif data_type in ["ACCE", "GYRO", "MAGN"]:
                 record = {
                     "ts": float(line_contents[1]),
-                    "accuracy": int(line_contents[6]),
                     "x": float(line_contents[3]),
                     "y": float(line_contents[4]),
                     "z": float(line_contents[5]),
@@ -125,6 +126,21 @@ def convert_to_dataframes(
     gyro = gyro.reset_index(drop=True)
     mgf = mgf.reset_index(drop=True)
     gt_ref = gt_ref.reset_index(drop=True)
+
+    # センサデータのスキーマを定義
+    senser_schema = pa.DataFrameSchema(
+        {
+            "ts": pa.Column(pa.Float, nullable=False),
+            "x": pa.Column(pa.Float, nullable=False),
+            "y": pa.Column(pa.Float, nullable=False),
+            "z": pa.Column(pa.Float, nullable=False),
+        },
+    )
+
+    # バリデーション
+    senser_schema(acc_df)
+    senser_schema(gyro)
+    senser_schema(mgf)
 
     return acc_df, gyro, mgf, gt_ref, blescans
 

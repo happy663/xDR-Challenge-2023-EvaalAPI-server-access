@@ -138,7 +138,7 @@ def rotate_cumulative_displacement(df, angle, initial_point: dict[str, float]):
     return pd.DataFrame({"ts": df.ts, "x_displacement": x_new, "y_displacement": y_new})
 
 
-def filter_strong_blescans(blescans: pd.DataFrame, ts: np.float32, rssi: np.float32):
+def filter_strong_blescans(blescans: pd.DataFrame, ts: float, rssi: float):
     """Filter out blescans that have rssi value greater than -76 and ts value less than 30."""
     strong_blescans = blescans[(blescans["rssi"] > rssi) & (blescans["ts"] < ts)]
     strong_blescans.reset_index(inplace=True)
