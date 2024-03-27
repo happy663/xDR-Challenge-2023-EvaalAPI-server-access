@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import os
 import sys
+
+# fmt: off
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-# fmt: off
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(str(Path(__file__).parent))
 import estimate
 import utils
 
@@ -144,11 +145,11 @@ def _find_best_alignment_angle(
     return _get_optimal_angle(df_results)
 
 
-def find_best_direction(
+def rotate_trajectory_to_optimal_alignment(
     acc_df: pd.DataFrame,
     angle_df: pd.DataFrame,
     ground_truth_df: pd.DataFrame,
-    edit_map_dict: dict[str, np.ndarray],
+    map_dict: dict[str, np.ndarray],
     floor_name: str,
     dx: float,
     dy: float,
@@ -159,8 +160,8 @@ def find_best_direction(
     ----
         acc_df (pd.DataFrame): The accelerometer data.
         angle_df (pd.DataFrame): The angle data.
-        ground_truth (pd.DataFrame): The ground truth data.
-        edit_map_dict (dict[str, np.ndarray]): The edit map dictionary.
+        ground_truth_df (pd.DataFrame): The ground truth data.
+        map_dict (dict[str, np.ndarray]): The edit map dictionary.
         floor_name (str): The floor name.
         dx (float): The x-axis resolution.
         dy (float): The y-axis resolution.
@@ -170,6 +171,12 @@ def find_best_direction(
         tuple[pd.DataFrame, pd.DataFrame]: The straight angle and straight angle displacement.
 
     """
+    if floor_name not in map_dict:
+        msg = f"floor_name '{floor_name}' is not a valid key in edit_map_dict"
+        raise ValueError(
+            msg,
+        )
+
     # 歩行タイミングの角度を求める
     angle_df_in_step_timing = utils.convert_to_peek_angle(
         acc_df,
@@ -179,7 +186,7 @@ def find_best_direction(
     optimal_angle = _find_best_alignment_angle(
         angle_df_in_step_timing,
         ground_truth_df,
-        edit_map_dict,
+        map_dict,
         floor_name,
         dx,
         dy,

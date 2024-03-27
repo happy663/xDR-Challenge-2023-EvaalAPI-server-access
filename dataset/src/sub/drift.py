@@ -72,7 +72,7 @@ def _search_optimal_drift_from_angle(
     )
 
 
-def remove_drift_from_angle(
+def remove_drift_in_angle_df(
     acc_df: pd.DataFrame,
     angle_df: pd.DataFrame,
     ground_tooth_point_df: pd.DataFrame,
