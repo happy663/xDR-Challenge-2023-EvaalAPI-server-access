@@ -1,11 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from PIL import Image
 
-
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_columns', None)
+pd.set_option("display.max_rows", None)
+pd.set_option("display.max_columns", None)
 
 
 LOG_FILE_PATH = "../trials/4_1_51.txt"
@@ -19,7 +18,6 @@ FOLDER_ID = "1qZBLQ66_pwRwLOy3Zj5q_qAwY_Z05HXb"
 
 # 正解軌跡を出力する関数
 def output_gt(gt_filepath: str):
-
     # This cell shows BLE beacons and map information
     def load_bitmap(filename):
         image = Image.open(filename)
@@ -34,7 +32,8 @@ def output_gt(gt_filepath: str):
     map_dict = {}
     for floor_name in FLOOR_NAMES:
         map_dict[floor_name] = load_bitmap(
-            GIS_BASE_PATH + floor_name + "_0.01_0.01.bmp")
+            GIS_BASE_PATH + floor_name + "_0.01_0.01.bmp"
+        )
 
     # read the beacon list
     df_beacons = pd.read_csv(BEACON_LIST_PATH)
@@ -51,8 +50,12 @@ def output_gt(gt_filepath: str):
     # plot map
     xmax = map_dict[floor_name].shape[0] * dx  # length of map along x axis
     ymax = map_dict[floor_name].shape[1] * dy  # length of map along y axis
-    plt.imshow(np.rot90(map_dict[floor_name]),
-               extent=[0, xmax, 0, ymax], cmap="binary", alpha=0.5)
+    plt.imshow(
+        np.rot90(map_dict[floor_name]),
+        extent=[0, xmax, 0, ymax],
+        cmap="binary",
+        alpha=0.5,
+    )
 
     # plot beacons
     # extract beacons in the designated floor
@@ -68,4 +71,4 @@ def output_gt(gt_filepath: str):
     plt.ylabel("y (m)")
     plt.title(floor_name)
 
-    plt.savefig("./output/image/"+gt_filepath[5:-4]+".png")
+    plt.savefig("./output/image/" + gt_filepath[5:-4] + ".png")

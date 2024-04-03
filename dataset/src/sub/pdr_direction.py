@@ -148,7 +148,7 @@ def _find_best_alignment_angle(
 Axis2D = Literal["x", "y"]
 
 
-def rotate_trajectory_to_optimal_alignment(
+def rotate_trajectory_to_optimal_alignment_using_map(
     acc_df: pd.DataFrame,
     angle_df: pd.DataFrame,
     map_dict: dict[str, np.ndarray],

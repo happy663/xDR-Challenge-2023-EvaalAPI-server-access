@@ -141,8 +141,7 @@ def rotate_cumulative_displacement(df, angle, initial_point: dict[str, float]):
 def filter_strong_blescans(blescans: pd.DataFrame, ts: float, rssi: float):
     """Filter out blescans that have rssi value greater than -76 and ts value less than 30."""
     strong_blescans = blescans[(blescans["rssi"] > rssi) & (blescans["ts"] < ts)]
-    strong_blescans.reset_index(inplace=True)
-    return strong_blescans
+    return strong_blescans.reset_index(drop=True)
 
 
 def load_beacons_and_merge(BEACON_LIST_PATH, strong_blescans):
@@ -617,12 +616,12 @@ def plot_map(map_dict, floor_name, dx, dy):
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
     plt.title(floor_name)
-    plt.imshow(
-        np.rot90(map_dict[floor_name]),
-        extent=[0, xmax, 0, ymax],
-        cmap="binary",
-        alpha=0.5,
-    )
+    # plt.imshow(
+    # np.rot90(map_dict[floor_name]),
+    # extent=[0, xmax, 0, ymax],
+    # cmap="binary",
+    # alpha=0.5,
+    # )
 
 
 def find_nearest_passable_point(passable_dict, floor_name, start_x, start_y, dx, dy):
