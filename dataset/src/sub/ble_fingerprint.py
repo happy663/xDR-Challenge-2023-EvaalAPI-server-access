@@ -48,9 +48,9 @@ def process_beacon_data(
     beacon_addresses: np.ndarray,
     floor_name: str,
     rssi_threshold: int,
-) -> list[pd.DataFrame]:
+) -> dict[str, pd.DataFrame]:
     """Further processing of beacon data for given addresses on a specific floor."""
-    all_results = []
+    all_results_dict = {}
     for address in beacon_addresses:
         subset = df[
             (df["beacon_address"] == address)
@@ -62,33 +62,32 @@ def process_beacon_data(
         refined_df["third_quartile"] = subset["count"].quantile(0.75)
         refined_df["count_mean"] = subset["count"].mean()
         refined_df["count_weight_average"] = count_threshold
-        all_results.append(refined_df)
-    return all_results
+
+        all_results_dict[address] = refined_df
+    return all_results_dict
 
 
-def ble_finger(ble_fingerprint_df: pd.DataFrame):
+def ble_finger(
+    ble_fingerprint_df: pd.DataFrame,
+    floor_name: str,
+) -> dict[str, pd.DataFrame]:
     """Process BLE fingerprint data."""
     ble_fingerprint_df = round_coordinates(ble_fingerprint_df)
     beacon_stats_df = aggregate_beacon_data(ble_fingerprint_df)
     beacon_addresses = filter_beacons_by_floor_and_rssi(beacon_stats_df, "FLU01", -70)
-    processed_beacon_data = process_beacon_data(
+    return process_beacon_data(
         beacon_stats_df,
         beacon_addresses,
-        "FLU01",
+        floor_name,
         -70,
     )
-    return processed_beacon_data
 
 
-def main():
+def main() -> None:
+    """Entry point of the program."""
     ble_fingerprint_df = pd.read_csv("../beacon_reception_events.csv")
-    processed_beacon_data = ble_finger(ble_fingerprint_df)
-    print(processed_beacon_data[0])
-    print(processed_beacon_data[1])
-    print(processed_beacon_data[2])
-    print(processed_beacon_data[3])
-    print(processed_beacon_data[4])
-    print(processed_beacon_data[4])
+    processed_beacon_df_dict = ble_finger(ble_fingerprint_df, "FLU01")
+    print(processed_beacon_df_dict)
 
 
 if __name__ == "__main__":
