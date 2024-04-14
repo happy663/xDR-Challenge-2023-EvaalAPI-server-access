@@ -88,18 +88,13 @@ def rotate_trajectory_to_optimal_alignment_using_ble(
         )
     )
 
-    strong_ble_scans_df = estimate.filter_strong_blescans(
-        ble_scans_df,
-        90,
-        -76,
-    )
+    strong_ble_scans_df = estimate.filter_strong_blescans(ble_scans_df, 90, -76)
 
     strong_ble_merege_df = strong_ble_scans_df.merge(
         ble_position_df,
         on="bdaddress",
         how="left",
     )
-    print(strong_ble_merege_df)
 
     optimal_angle = search_optimal_angle(
         cumulative_displacement_df,

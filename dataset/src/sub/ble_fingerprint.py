@@ -48,9 +48,9 @@ def process_beacon_data(
     beacon_addresses: np.ndarray,
     floor_name: str,
     rssi_threshold: int,
-) -> dict[str, pd.DataFrame]:
+) -> pd.DataFrame:
     """Further processing of beacon data for given addresses on a specific floor."""
-    all_results_dict = {}
+    all_results_df = pd.DataFrame()
     for address in beacon_addresses:
         subset = df[
             (df["beacon_address"] == address)
@@ -63,14 +63,15 @@ def process_beacon_data(
         refined_df["count_mean"] = subset["count"].mean()
         refined_df["count_weight_average"] = count_threshold
 
-        all_results_dict[address] = refined_df
-    return all_results_dict
+        all_results_df = pd.concat([all_results_df, refined_df], ignore_index=True)
+
+    return all_results_df
 
 
 def ble_finger(
     ble_fingerprint_df: pd.DataFrame,
     floor_name: str,
-) -> dict[str, pd.DataFrame]:
+) -> pd.DataFrame:
     """Process BLE fingerprint data."""
     ble_fingerprint_df = round_coordinates(ble_fingerprint_df)
     beacon_stats_df = aggregate_beacon_data(ble_fingerprint_df)
@@ -83,11 +84,32 @@ def ble_finger(
     )
 
 
+def aggregate_consecutive_bdaddress(df):
+    """Aggregate consecutive rows with the same bdaddress by averaging their ts and rssi values, keeping the bdaddress in the final output."""
+    # Identify changes in bdaddress to define groups
+    df["group"] = (df["bdaddress"] != df["bdaddress"].shift()).cumsum()
+
+    # Calculate mean ts and rssi for each group and include bdaddress in the results
+    aggregated_df = (
+        df.groupby(["bdaddress", "group"])
+        .agg(
+            {
+                "ts": "mean",
+                "rssi": "mean",
+            },
+        )
+        .reset_index()
+        .drop(columns=["group"])
+    )  # Removing the 'group' column after reset_index
+
+    return aggregated_df
+
+
 def main() -> None:
     """Entry point of the program."""
     ble_fingerprint_df = pd.read_csv("../beacon_reception_events.csv")
-    processed_beacon_df_dict = ble_finger(ble_fingerprint_df, "FLU01")
-    print(processed_beacon_df_dict)
+    processed_beacon_df = ble_finger(ble_fingerprint_df, "FLU01")
+    print(processed_beacon_df)
 
 
 if __name__ == "__main__":
