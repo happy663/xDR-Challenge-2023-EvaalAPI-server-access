@@ -6,3 +6,4 @@
 /secret
 token.json
 __pycache__/
+beacon_reception_events.csv
