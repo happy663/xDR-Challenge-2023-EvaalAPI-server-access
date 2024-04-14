@@ -616,12 +616,12 @@ def plot_map(map_dict, floor_name, dx, dy):
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
     plt.title(floor_name)
-    # plt.imshow(
-    # np.rot90(map_dict[floor_name]),
-    # extent=[0, xmax, 0, ymax],
-    # cmap="binary",
-    # alpha=0.5,
-    # )
+    plt.imshow(
+        np.rot90(map_dict[floor_name]),
+        extent=[0, xmax, 0, ymax],
+        cmap="binary",
+        alpha=0.5,
+    )
 
 
 def find_nearest_passable_point(passable_dict, floor_name, start_x, start_y, dx, dy):
@@ -662,12 +662,12 @@ def find_nearest_passable_point(passable_dict, floor_name, start_x, start_y, dx,
     return None
 
 
-def correct_unpassable_points(
+def move_unwalkable_points_to_walkable(
     cumulative_displacement_df: pd.DataFrame,
-    map_dict,
-    floor_name,
-    dx,
-    dy,
+    map_dict: dict[str, np.ndarray],
+    floor_name: str,
+    dx: float,
+    dy: float,
 ):
     cumulative_displacement_df = cumulative_displacement_df.copy().reset_index(
         drop=True,

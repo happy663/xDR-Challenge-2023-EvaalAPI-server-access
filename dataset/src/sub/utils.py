@@ -4,11 +4,12 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
+import matplotlib.pyplot as plt
+import pandas as pd
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from scipy.spatial.transform import Rotation as R
 
 if TYPE_CHECKING:
@@ -51,7 +52,7 @@ def plot_displacement_map(
     if fig_size is not None:
         plt.figure(figsize=fig_size)
     else:
-        plt.figure(figsize=[5, 5])
+        plt.figure(figsize=(5, 5))
 
     xmax = map_dict[floor_name].shape[0] * dx
     ymax = map_dict[floor_name].shape[1] * dy
@@ -61,12 +62,13 @@ def plot_displacement_map(
     plt.ylim(y_min, ymax)
     plt.xlabel("x (m)", fontsize=font_size)
     plt.ylabel("y (m)", fontsize=font_size)
+    plt.rcParams["font.size"] = font_size
 
     if display_map:
         plt.title(floor_name)
         plt.imshow(
             np.rot90(map_dict[floor_name]),
-            extent=[0, xmax, 0, ymax],
+            extent=(0, xmax, 0, ymax),
             cmap="binary",
             alpha=0.5,
         )
