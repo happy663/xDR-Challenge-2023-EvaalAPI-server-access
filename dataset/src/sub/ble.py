@@ -24,7 +24,7 @@ def rotate_cumulative_displacement(df, angle, initial_point: dict[str, float]):
 
 def search_optimal_angle(
     displacement_df: pd.DataFrame,
-    strong_blescans: pd.DataFrame,
+    strong_ble_merege_df: pd.DataFrame,
     *,
     ground_truth_first_point: dict[Axis2D, float],
 ) -> float:
@@ -42,7 +42,7 @@ def search_optimal_angle(
         # Find nearest rows using merge_asof
         merged_df = pd.merge_asof(
             new_df.sort_values("ts"),
-            strong_blescans.sort_values("ts"),
+            strong_ble_merege_df.sort_values("ts"),
             on="ts",
             direction="nearest",
         )
@@ -99,6 +99,7 @@ def rotate_trajectory_to_optimal_alignment_using_ble(
         on="bdaddress",
         how="left",
     )
+    print(strong_ble_merege_df)
 
     optimal_angle = search_optimal_angle(
         cumulative_displacement_df,
