@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import os
 import sys
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
+import ble
+import estimate
 
 
 # ble_fingerのデータ構造
@@ -68,22 +72,6 @@ def process_beacon_data(
     return all_results_df
 
 
-def ble_finger(
-    ble_fingerprint_df: pd.DataFrame,
-    floor_name: str,
-) -> pd.DataFrame:
-    """Process BLE fingerprint data."""
-    ble_fingerprint_df = round_coordinates(ble_fingerprint_df)
-    beacon_stats_df = aggregate_beacon_data(ble_fingerprint_df)
-    beacon_addresses = filter_beacons_by_floor_and_rssi(beacon_stats_df, "FLU01", -70)
-    return process_beacon_data(
-        beacon_stats_df,
-        beacon_addresses,
-        floor_name,
-        -70,
-    )
-
-
 def aggregate_consecutive_bdaddress(df):
     """Aggregate consecutive rows with the same bdaddress by averaging their ts and rssi values, keeping the bdaddress in the final output."""
     # Identify changes in bdaddress to define groups
@@ -105,11 +93,114 @@ def aggregate_consecutive_bdaddress(df):
     return aggregated_df
 
 
+Axis2D = Literal["x", "y"]
+
+
+def rotate_trajectory_to_optimal_alignment_using_ble_fingerprint(
+    acc_df: pd.DataFrame,
+    angle_df: pd.DataFrame,
+    ble_scans_df: pd.DataFrame,
+    ble_fingerprint_df: pd.DataFrame,
+    floor_name: str,
+    *,
+    ground_truth_first_point: dict[Axis2D, float] | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Rotate the trajectory to the optimal alignment using BLE fingerprint data.
+
+    Args:
+    ----
+        acc_df (pd.DataFrame): Accelerometer data.
+        angle_df (pd.DataFrame): Angle data.
+        ble_scans_df (pd.DataFrame): BLE scans data.
+        ble_fingerprint_df (pd.DataFrame): BLE fingerprint data.
+        floor_name (str): Name of the floor.
+        ground_truth_first_point (Optional[Dict[Axis2D, float]], optional): Ground truth first point. Defaults to None.
+
+    Returns:
+    -------
+        tuple[pd.DataFrame, pd.DataFrame]: Tuple containing the rotated optimal angle and displacement data.
+
+    """
+    if ground_truth_first_point is None:
+        ground_truth_first_point = {"x": 0.0, "y": 0.0}
+    first_time_remove_drift_angle_displacement = (
+        estimate.convert_to_peek_angle_and_compute_displacement_by_angle(
+            angle_df,
+            acc_df,
+            0.5,
+            {"x": ground_truth_first_point["x"], "y": ground_truth_first_point["y"]},
+            0.0,
+        )
+    )
+    """Process BLE fingerprint data."""
+    aggreated_strong_blescans = (
+        aggregate_consecutive_bdaddress(
+            ble_scans_df,
+        )
+        .sort_values("ts")
+        .reset_index(drop=True)
+    )
+    ble_fingerprint_df = round_coordinates(ble_fingerprint_df)
+    aggregate_ble_fingerprint_df = aggregate_beacon_data(ble_fingerprint_df)
+    beacon_addresses_array = filter_beacons_by_floor_and_rssi(
+        aggregate_ble_fingerprint_df,
+        "FLU01",
+        -70,
+    )
+
+    beacon_stats_df = process_beacon_data(
+        aggregate_ble_fingerprint_df,
+        beacon_addresses_array,
+        floor_name,
+        -70,
+    )
+
+    merged_beacon_stats_df = beacon_stats_df.merge(
+        aggreated_strong_blescans,
+        left_on="beacon_address",
+        right_on="bdaddress",
+        how="left",
+    )
+
+    delete_nan_merged_beacon_stats_df = (
+        merged_beacon_stats_df.dropna(subset=["bdaddress"])
+        .sort_values("ts")
+        .reset_index(drop=True)
+    )
+
+    print(delete_nan_merged_beacon_stats_df)
+
+    optimal_angle = ble.search_optimal_angle(
+        first_time_remove_drift_angle_displacement,
+        delete_nan_merged_beacon_stats_df,
+        ground_truth_first_point={
+            "x": ground_truth_first_point["x"],
+            "y": ground_truth_first_point["y"],
+        },
+    )
+
+    rotated_optimal_angle_df = pd.DataFrame(
+        {
+            "ts": angle_df["ts"],
+            "x": angle_df["x"] + optimal_angle,
+        },
+    )
+
+    rotated_optimal_angle_df_displacement = (
+        estimate.convert_to_peek_angle_and_compute_displacement_by_angle(
+            rotated_optimal_angle_df,
+            acc_df,
+            0.5,
+            {"x": ground_truth_first_point["x"], "y": ground_truth_first_point["y"]},
+        )
+    )
+
+    return rotated_optimal_angle_df, rotated_optimal_angle_df_displacement
+
+
 def main() -> None:
     """Entry point of the program."""
     ble_fingerprint_df = pd.read_csv("../beacon_reception_events.csv")
-    processed_beacon_df = ble_finger(ble_fingerprint_df, "FLU01")
-    print(processed_beacon_df)
 
 
 if __name__ == "__main__":
