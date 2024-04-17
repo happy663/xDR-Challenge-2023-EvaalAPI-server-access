@@ -104,7 +104,7 @@ def rotate_trajectory_to_optimal_alignment_using_ble_fingerprint(
     floor_name: str,
     *,
     ground_truth_first_point: dict[Axis2D, float] | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Rotate the trajectory to the optimal alignment using BLE fingerprint data.
 
     Args:
@@ -132,10 +132,13 @@ def rotate_trajectory_to_optimal_alignment_using_ble_fingerprint(
             0.0,
         )
     )
+
+    strong_ble_scans_df = estimate.filter_strong_blescans(ble_scans_df, 180, -76)
+
     """Process BLE fingerprint data."""
     aggreated_strong_blescans = (
         aggregate_consecutive_bdaddress(
-            ble_scans_df,
+            strong_ble_scans_df,
         )
         .sort_values("ts")
         .reset_index(drop=True)
@@ -168,7 +171,11 @@ def rotate_trajectory_to_optimal_alignment_using_ble_fingerprint(
         .reset_index(drop=True)
     )
 
-    print(delete_nan_merged_beacon_stats_df)
+    print(
+        delete_nan_merged_beacon_stats_df.to_csv(
+            "delete_nan_merged_beacon_stats_df.csv"
+        )
+    )
 
     optimal_angle = ble.search_optimal_angle(
         first_time_remove_drift_angle_displacement,
@@ -178,6 +185,7 @@ def rotate_trajectory_to_optimal_alignment_using_ble_fingerprint(
             "y": ground_truth_first_point["y"],
         },
     )
+    print(optimal_angle)
 
     rotated_optimal_angle_df = pd.DataFrame(
         {
@@ -195,7 +203,11 @@ def rotate_trajectory_to_optimal_alignment_using_ble_fingerprint(
         )
     )
 
-    return rotated_optimal_angle_df, rotated_optimal_angle_df_displacement
+    return (
+        rotated_optimal_angle_df,
+        rotated_optimal_angle_df_displacement,
+        delete_nan_merged_beacon_stats_df,
+    )
 
 
 def main() -> None:

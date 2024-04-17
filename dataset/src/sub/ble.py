@@ -102,6 +102,7 @@ def rotate_trajectory_to_optimal_alignment_using_ble(
         ground_truth_first_point=ground_truth_first_point,
     )
 
+    print(f"Optimal angle: {optimal_angle}")
     rotated_optimal_angle_df = pd.DataFrame(
         {
             "ts": angle_df["ts"],

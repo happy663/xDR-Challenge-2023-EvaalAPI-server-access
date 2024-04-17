@@ -616,6 +616,10 @@ def plot_map(map_dict, floor_name, dx, dy):
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
     plt.title(floor_name)
+    plt.xlabel("x (m)", fontsize=15)
+    plt.ylabel("y (m)", fontsize=15)
+    plt.rcParams["font.size"] = 20
+
     plt.imshow(
         np.rot90(map_dict[floor_name]),
         extent=[0, xmax, 0, ymax],
