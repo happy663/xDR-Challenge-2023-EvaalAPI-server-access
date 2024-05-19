@@ -22,3 +22,18 @@ ipykernel = "^6.29.4"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+select = ["ALL"]
+ignore = [
+    "E501",    # line too long, handled by black
+    "PLR0913",
+]
+
+[tool.pyright]
+typeCheckingMode = "standard"
+# basePath
+venvPath = "."
+# basePathから指定する
+venv = ".venv"

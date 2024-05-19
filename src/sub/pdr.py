@@ -139,26 +139,10 @@ def convert_to_dataframes(
         },
     )
 
-    # ライダーデータのスキーマを定義
-    lidar_schema = pa.DataFrameSchema(
-        {
-            "ts": pa.Column(pa.Float, nullable=False),
-            "x": pa.Column(pa.Float, nullable=False),
-            "y": pa.Column(pa.Float, nullable=False),
-            "z": pa.Column(pa.Float, nullable=False),
-            "q0": pa.Column(pa.Float, nullable=False),
-            "q1": pa.Column(pa.Float, nullable=False),
-            "q2": pa.Column(pa.Float, nullable=False),
-            "q3": pa.Column(pa.Float, nullable=False),
-            "floor_name": pa.Column(pa.String, nullable=False),
-        },
-    )
-
     # バリデーション
     senser_schema(acc_df)
     senser_schema(gyro)
     senser_schema(mgf)
-    lidar_schema(gt_ref)
 
     return acc_df, gyro, mgf, gt_ref, blescans
 
@@ -230,7 +214,7 @@ def estimate_trajectory(
     # ジャイロデータを用いてステップタイミングでの角度を推定
     peek_angle = estimate.convert_to_peek_angle(gyro_df, acc_df, peaks)
     # 累積変位の計算
-    return estimate.calculate_cumulative_displacement(
+    return peek_angle, estimate.calculate_cumulative_displacement(
         peek_angle.ts,
         peek_angle["x"],
         0.5,
@@ -239,7 +223,7 @@ def estimate_trajectory(
             "y": ground_truth_first_point["y"],
         },
         0.0,
-    ), peek_angle
+    )
 
 
 if __name__ == "__main__":

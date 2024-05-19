@@ -10,7 +10,7 @@ import pandas as pd
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 import numpy as np
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -91,8 +91,6 @@ def plot_displacement_map(
     plt.show()
 
 
-# これは軌跡前半はドリフトが乗りづらいため
-# 時間全体の中央を変数に入れる
 def extract_rotation(quaternions: list[float]) -> float:
     """Extract the rotation angle from a quaternion.
 
@@ -107,21 +105,9 @@ def extract_rotation(quaternions: list[float]) -> float:
         The rotation angle in radians.
 
     """
-    res = R.from_quat(quaternions).apply([1, 0, 0])
+    res = Rotation.from_quat(quaternions).apply([1, 0, 0])
 
     return np.arctan2(res[1], res[0])
-
-
-# def _match_data(something_df: pd.DataFrame, peek_ts_df: pd.Series) -> pd.DataFrame:
-#     matched_df = pd.merge_asof(
-#         peek_ts_df,
-#         something_df,
-#         on="ts",
-#         direction="nearest",
-#         tolerance=pd.Timedelta("100ms"),
-#     )
-#     return matched_df
-
 
 def _match_data(something_df: pd.DataFrame, peek_t: pd.Series):
     matched_df = pd.DataFrame()
