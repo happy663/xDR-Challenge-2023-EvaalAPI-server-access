@@ -9,3 +9,4 @@ __pycache__/
 beacon_reception_events.csv
 sample-trials
 evaluation_data
+gt
