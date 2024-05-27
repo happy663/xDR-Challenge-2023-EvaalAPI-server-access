@@ -188,6 +188,23 @@ def move_unwalkable_points_to_walkable(
     return corrected_displacement_df
 
 
+def calculate_centroid(
+    coefficients: list[dict[Coefficient, float]],
+) -> dict[str, float]:
+    direction_error_sum = 0.0
+    stride_length_error_sum = 0.0
+    count = len(coefficients)
+
+    for coefficient in coefficients:
+        direction_error_sum += coefficient["direction_error_coefficient"]
+        stride_length_error_sum += coefficient["stride_length_error_coefficient"]
+
+    return {
+        "direction_error_coefficient": direction_error_sum / count,
+        "stride_length_error_coefficient": stride_length_error_sum / count,
+    }
+
+
 Coefficient = Literal["direction_error_coefficient", "stride_length_error_coefficient"]
 
 
@@ -227,6 +244,10 @@ def move_unwalkable_points_to_walkable2(
 
     corrected_displacement_df = cumulative_displacement_df
 
+    # 動的に変化する
+    update_step_length = 0.5
+    befor_index = 0
+
     for index, _ in enumerate(cumulative_displacement_df.iterrows()):
         nearest_row = corrected_displacement_df.iloc[index]
         if not is_passable(
@@ -237,7 +258,6 @@ def move_unwalkable_points_to_walkable2(
             dx,
             dy,
         ):
-            filtered_df = corrected_displacement_df.iloc[: index + 1]
             # 進行方向の誤差補正係数
             direction_error_coefficient = np.arange(0.9, 1.1, 0.01)
             # 歩幅の誤差補正係数
@@ -252,7 +272,7 @@ def move_unwalkable_points_to_walkable2(
                         estimate.calculate_cumulative_displacement(
                             angle_df_in_step_timing["ts"],
                             angle_df_in_step_timing["x"] * direction_error,
-                            0.5 * stride_length_error,
+                            update_step_length * stride_length_error,
                             {
                                 "x": ground_truth_first_point["x"],
                                 "y": ground_truth_first_point["y"],
@@ -263,6 +283,7 @@ def move_unwalkable_points_to_walkable2(
                     )
                     # 誤差補正後の最後の点
                     specific_point = calculate_cumulative_displacement_df.iloc[index]
+
                     if is_passable(
                         map_dict,
                         floor_name,
@@ -271,7 +292,6 @@ def move_unwalkable_points_to_walkable2(
                         dx,
                         dy,
                     ):
-                        corrected_displacement_df = calculate_cumulative_displacement_df
                         coefficient_combinations.append(
                             {
                                 "direction_error_coefficient": direction_error,
@@ -280,5 +300,33 @@ def move_unwalkable_points_to_walkable2(
                         )
 
                         break
+
+            centroid_coefficient = calculate_centroid(coefficient_combinations)
+
+            # ここで軌跡を補正が完了したものに置き換える
+            corrected_displacement_df = estimate.calculate_cumulative_displacement(
+                angle_df_in_step_timing["ts"],
+                angle_df_in_step_timing["x"]
+                * centroid_coefficient["direction_error_coefficient"],
+                update_step_length
+                * centroid_coefficient["stride_length_error_coefficient"],
+                {
+                    "x": ground_truth_first_point["x"],
+                    "y": ground_truth_first_point["y"],
+                },
+            ).reset_index(drop=True)
+            print(centroid_coefficient)
+
+            # 軌跡全体の歩幅を更新する
+            update_step_length = (
+                update_step_length
+                * centroid_coefficient["stride_length_error_coefficient"]
+            )
+
+            # 角度も更新する
+            angle_df_in_step_timing["x"] = (
+                angle_df_in_step_timing["x"]
+                * centroid_coefficient["direction_error_coefficient"]
+            )
 
     return corrected_displacement_df
