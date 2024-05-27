@@ -244,12 +244,15 @@ def move_unwalkable_points_to_walkable2(
 
     corrected_displacement_df = cumulative_displacement_df
 
-    # 動的に変化する
-    update_step_length = 0.5
+    # 歩幅の配列
+    step_lengths = np.full(len(angle_df_in_step_timing), 0.5)
     befor_index = 0
+    update_step_length = 0.5
 
     for index, _ in enumerate(cumulative_displacement_df.iterrows()):
         nearest_row = corrected_displacement_df.iloc[index]
+        if index > 77:
+            break
         if not is_passable(
             map_dict,
             floor_name,
@@ -258,6 +261,7 @@ def move_unwalkable_points_to_walkable2(
             dx,
             dy,
         ):
+            print(index)
             # 進行方向の誤差補正係数
             direction_error_coefficient = np.arange(0.9, 1.1, 0.01)
             # 歩幅の誤差補正係数
@@ -315,7 +319,6 @@ def move_unwalkable_points_to_walkable2(
                     "y": ground_truth_first_point["y"],
                 },
             ).reset_index(drop=True)
-            print(centroid_coefficient)
 
             # 軌跡全体の歩幅を更新する
             update_step_length = (
@@ -330,3 +333,57 @@ def move_unwalkable_points_to_walkable2(
             )
 
     return corrected_displacement_df
+
+
+def calculate_cumulative_displacement(
+    ts: pd.Series,
+    angle_data_x: pd.Series,
+    step_lengths: np.ndarray,
+    initial_point: dict[str, float],
+    initial_timestamp: float = 0.0,
+):
+    x_displacement = step_lengths * np.cos(angle_data_x)
+    y_displacement = step_lengths * np.sin(angle_data_x)
+
+    init_data_frame = pd.DataFrame(
+        {
+            "ts": [initial_timestamp],
+            "x_displacement": initial_point["x"],
+            "y_displacement": initial_point["y"],
+        },
+    )
+
+    return pd.concat(
+        [
+            init_data_frame,
+            pd.DataFrame(
+                {
+                    "ts": ts,
+                    "x_displacement": x_displacement.cumsum() + initial_point["x"],
+                    "y_displacement": y_displacement.cumsum() + initial_point["y"],
+                },
+            ),
+        ],
+    )
+
+
+# Example data
+
+sample_df = pd.DataFrame(
+    {
+        "ts": [0, 1, 2, 3, 4],
+        "x": [1, 1, 1, 1, 1],
+    },
+)
+
+step_lengths = np.array([1, 2, 3, 4])
+result = sample_df["x"][: len(step_lengths)] * step_lengths
+print(result)
+
+
+# result_df = calculate_cumulative_displacement(
+#     ts,
+#     angle_data_x,
+#     step_lengths,
+#     initial_point,
+# )

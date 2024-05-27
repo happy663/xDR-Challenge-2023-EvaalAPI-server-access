@@ -79,7 +79,7 @@ def plot_displacement_map(
         displacement_df.y_displacement,
         c=displacement_df.ts,
         cmap="rainbow",
-        s=5,
+        s=1,
     )
 
     # カラーバーの追加
