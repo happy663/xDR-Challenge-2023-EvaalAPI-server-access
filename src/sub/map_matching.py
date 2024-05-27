@@ -45,12 +45,13 @@ def find_nearest_passable_point(
     start_y: float,
     dx: float,
     dy: float,
-):
+) -> tuple[float, float] | None:
     start_row = int(start_x / dx)
     start_col = int(start_y / dy)
 
     queue = deque([(start_row, start_col)])
-    visited = set((start_row, start_col))
+    visited: set[tuple[int, int]] = set()
+    visited.add((start_row, start_col))
 
     if (
         start_row < 0
@@ -164,10 +165,8 @@ def move_unwalkable_points_to_walkable(
 
     corrected_displacement_df = cumulative_displacement_df
 
-    for index, row in cumulative_displacement_df.iterrows():
+    for index, _ in enumerate(cumulative_displacement_df.iterrows()):
         nearest_row = corrected_displacement_df.iloc[index]
-
-        # その点が歩行可能ではない場合
         if not is_passable(
             map_dict,
             floor_name,
@@ -176,34 +175,14 @@ def move_unwalkable_points_to_walkable(
             dx,
             dy,
         ):
-            before_of_correction_point = {
-                "x": nearest_row["x_displacement"],
-                "y": nearest_row["y_displacement"],
-            }
-
-            corrected_point = find_nearest_passable_point(
+            corrected_displacement_df = correct_displacement(
+                corrected_displacement_df,
                 map_dict,
                 floor_name,
-                nearest_row["x_displacement"],
-                nearest_row["y_displacement"],
+                index,
+                nearest_row,
                 dx,
                 dy,
             )
-            if corrected_point is None:
-                continue
-
-            after_of_correction_point = {
-                "x": corrected_point[0],
-                "y": corrected_point[1],
-            }
-
-            delta_x = after_of_correction_point["x"] - before_of_correction_point["x"]
-            delta_y = after_of_correction_point["y"] - before_of_correction_point["y"]
-
-            # 平行移動
-            corrected_displacement_df.loc[
-                index:,
-                ["x_displacement", "y_displacement"],
-            ] += [delta_x, delta_y]
 
     return corrected_displacement_df
