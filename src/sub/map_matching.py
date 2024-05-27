@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import deque
 from typing import Literal
 
@@ -7,9 +9,16 @@ import pandas as pd
 import utils
 
 
-def is_passable(passable_dict, floor_name, x, y, dx, dy):
+# その点が歩行可能かどうかを判断する関数
+def is_passable(
+    passable_dict: dict[str, np.ndarray],
+    floor_name: str,
+    x: float,
+    y: float,
+    dx: float,
+    dy: float,
+) -> bool:
     epsilon = 1e-9  # 非常に小さい値
-
     # 不動小数点の切り捨てによる誤差を防ぐために、微小な値を足している
     # 例えば32.51の場合微小な値を足さないと3250.9999999999995となり、3250に切り捨てられてしまう
     row = int((x + epsilon) / dx)
@@ -24,11 +33,19 @@ def is_passable(passable_dict, floor_name, x, y, dx, dy):
     ):
         return False
 
-    passable = passable_dict[floor_name][row, col]
+    passable: bool = passable_dict[floor_name][row, col]
+
     return passable
 
 
-def find_nearest_passable_point(passable_dict, floor_name, start_x, start_y, dx, dy):
+def find_nearest_passable_point(
+    passable_dict: dict[str, np.ndarray],
+    floor_name: str,
+    start_x: float,
+    start_y: float,
+    dx: float,
+    dy: float,
+):
     start_row = int(start_x / dx)
     start_col = int(start_y / dy)
 
@@ -66,6 +83,47 @@ def find_nearest_passable_point(passable_dict, floor_name, start_x, start_y, dx,
     return None
 
 
+def correct_displacement(
+    corrected_displacement_df: pd.DataFrame,
+    map_dict: dict[str, np.ndarray],
+    floor_name: str,
+    index: int,
+    nearest_row: pd.Series,
+    dx: float,
+    dy: float,
+) -> pd.DataFrame:
+    before_of_correction_point = {
+        "x": nearest_row["x_displacement"],
+        "y": nearest_row["y_displacement"],
+    }
+
+    corrected_point = find_nearest_passable_point(
+        map_dict,
+        floor_name,
+        nearest_row["x_displacement"],
+        nearest_row["y_displacement"],
+        dx,
+        dy,
+    )
+    if corrected_point is None:
+        return corrected_displacement_df
+
+    after_of_correction_point = {
+        "x": corrected_point[0],
+        "y": corrected_point[1],
+    }
+
+    delta_x = after_of_correction_point["x"] - before_of_correction_point["x"]
+    delta_y = after_of_correction_point["y"] - before_of_correction_point["y"]
+
+    corrected_displacement_df.loc[index:, ["x_displacement", "y_displacement"]] += [
+        delta_x,
+        delta_y,
+    ]
+
+    return corrected_displacement_df
+
+
 Axis2D = Literal["x", "y"]
 
 
@@ -100,11 +158,16 @@ def move_unwalkable_points_to_walkable(
         )
     )
 
+    cumulative_displacement_df = cumulative_displacement_df.copy().reset_index(
+        drop=True,
+    )
+
     corrected_displacement_df = cumulative_displacement_df
 
-    for index, rows in cumulative_displacement_df.iterrows():
+    for index, row in cumulative_displacement_df.iterrows():
         nearest_row = corrected_displacement_df.iloc[index]
 
+        # その点が歩行可能ではない場合
         if not is_passable(
             map_dict,
             floor_name,

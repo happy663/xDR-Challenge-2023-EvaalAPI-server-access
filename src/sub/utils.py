@@ -91,6 +91,40 @@ def plot_displacement_map(
     plt.show()
 
 
+def plot_map(
+    map_dict,
+    floor_name,
+    dx,
+    dy,
+    *,
+    fig_size: tuple[int, int] | None = None,
+    font_size: int = 10,
+):
+    if fig_size is not None:
+        plt.figure(figsize=fig_size)
+    else:
+        plt.figure(figsize=(5, 5))
+    plt.axis("equal")
+
+    # plot map
+    xmax = map_dict[floor_name].shape[0] * dx  # length of map along x axis
+    ymax = map_dict[floor_name].shape[1] * dy  # length of map along y axis
+
+    plt.xlim(0, xmax)
+    plt.ylim(0, ymax)
+
+    plt.xlabel("x (m)", fontsize=font_size)
+    plt.ylabel("y (m)", fontsize=font_size)
+    plt.title(floor_name, fontsize=font_size)
+
+    plt.imshow(
+        np.rot90(map_dict[floor_name]),
+        extent=(0, xmax, 0, ymax),
+        cmap="binary",
+        alpha=0.5,
+    )
+
+
 def extract_rotation(quaternions: list[float]) -> float:
     """Extract the rotation angle from a quaternion.
 
@@ -108,6 +142,7 @@ def extract_rotation(quaternions: list[float]) -> float:
     res = Rotation.from_quat(quaternions).apply([1, 0, 0])
 
     return np.arctan2(res[1], res[0])
+
 
 def _match_data(something_df: pd.DataFrame, peek_t: pd.Series):
     matched_df = pd.DataFrame()
