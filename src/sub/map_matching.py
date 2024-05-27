@@ -186,3 +186,99 @@ def move_unwalkable_points_to_walkable(
             )
 
     return corrected_displacement_df
+
+
+Coefficient = Literal["direction_error_coefficient", "stride_length_error_coefficient"]
+
+
+def move_unwalkable_points_to_walkable2(
+    acc_df: pd.DataFrame,
+    angle_df: pd.DataFrame,
+    map_dict: dict[str, np.ndarray],
+    floor_name: str,
+    dx: float,
+    dy: float,
+    *,
+    ground_truth_first_point: dict[Axis2D, float] | None = None,
+) -> pd.DataFrame:
+    if ground_truth_first_point is None:
+        ground_truth_first_point = {"x": 0.0, "y": 0.0}
+    # 歩行タイミングの角度を求める
+    angle_df_in_step_timing = utils.convert_to_peek_angle(
+        acc_df,
+        angle_df,
+    )
+
+    cumulative_displacement_df = (
+        estimate.convert_to_peek_angle_and_compute_displacement_by_angle(
+            angle_df_in_step_timing,
+            acc_df,
+            0.5,
+            {
+                "x": ground_truth_first_point["x"],
+                "y": ground_truth_first_point["y"],
+            },
+        )
+    )
+
+    cumulative_displacement_df = cumulative_displacement_df.copy().reset_index(
+        drop=True,
+    )
+
+    corrected_displacement_df = cumulative_displacement_df
+
+    for index, _ in enumerate(cumulative_displacement_df.iterrows()):
+        nearest_row = corrected_displacement_df.iloc[index]
+        if not is_passable(
+            map_dict,
+            floor_name,
+            nearest_row["x_displacement"],
+            nearest_row["y_displacement"],
+            dx,
+            dy,
+        ):
+            filtered_df = corrected_displacement_df.iloc[: index + 1]
+            # 進行方向の誤差補正係数
+            direction_error_coefficient = np.arange(0.9, 1.1, 0.01)
+            # 歩幅の誤差補正係数
+            stride_length_error_coefficient = np.arange(0.8, 1.2, 0.01)
+
+            coefficient_combinations: list[dict[Coefficient, float]] = []
+
+            for direction_error in direction_error_coefficient:
+                for stride_length_error in stride_length_error_coefficient:
+                    # 誤差補正後の累積変位を計算
+                    calculate_cumulative_displacement_df = (
+                        estimate.calculate_cumulative_displacement(
+                            angle_df_in_step_timing["ts"],
+                            angle_df_in_step_timing["x"] * direction_error,
+                            0.5 * stride_length_error,
+                            {
+                                "x": ground_truth_first_point["x"],
+                                "y": ground_truth_first_point["y"],
+                            },
+                        )
+                        .reset_index(drop=True)
+                        .iloc[: index + 1]
+                    )
+                    # 誤差補正後の最後の点
+                    specific_point = calculate_cumulative_displacement_df.iloc[index]
+                    if is_passable(
+                        map_dict,
+                        floor_name,
+                        specific_point["x_displacement"],
+                        specific_point["y_displacement"],
+                        dx,
+                        dy,
+                    ):
+                        corrected_displacement_df = calculate_cumulative_displacement_df
+                        coefficient_combinations.append(
+                            {
+                                "direction_error_coefficient": direction_error,
+                                "stride_length_error_coefficient": stride_length_error,
+                            },
+                        )
+
+                        break
+
+    return corrected_displacement_df

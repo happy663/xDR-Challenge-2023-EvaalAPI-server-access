@@ -93,13 +93,13 @@ def match_data(something_df: pd.DataFrame, peek_t: pd.Series):
 
 def calculate_cumulative_displacement(
     ts: pd.Series,
-    angle_data: pd.Series,
+    angle_data_x: pd.Series,
     step_length: float,
     initial_point: dict[str, float],
     initial_timestamp: float = 0.0,
 ):
-    x_displacement = step_length * np.cos(angle_data)
-    y_displacement = step_length * np.sin(angle_data)
+    x_displacement = step_length * np.cos(angle_data_x)
+    y_displacement = step_length * np.sin(angle_data_x)
 
     init_data_frame = pd.DataFrame(
         {
