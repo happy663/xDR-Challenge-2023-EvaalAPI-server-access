@@ -305,7 +305,9 @@ def move_unwalkable_points_to_walkable2(
 
                         break
 
+            print(coefficient_combinations)
             centroid_coefficient = calculate_centroid(coefficient_combinations)
+            print(centroid_coefficient)
 
             # ここで軌跡を補正が完了したものに置き換える
             corrected_displacement_df = estimate.calculate_cumulative_displacement(
