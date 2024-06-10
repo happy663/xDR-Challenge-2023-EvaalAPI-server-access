@@ -19,14 +19,14 @@ from scipy.signal import find_peaks
 pd.set_option("display.max_rows", None)
 pd.set_option("display.max_columns", None)
 
-GIS_BASE_PATH = "../../gis/"
+GIS_BASE_PATH = "../../dataset/gis/"
 BEACON_LIST_PATH = GIS_BASE_PATH + "beacon_list.csv"
 FLOOR_NAMES = ["FLU01", "FLU02", "FLD01"]
 FOLDER_ID = "1qZBLQ66_pwRwLOy3Zj5q_qAwY_Z05HXb"
 
 
 def _main() -> None:
-    log_file_directory = "../../trials/"
+    log_file_directory = "../../dataset/trials"
     log_file_name = "4_1_51_pdr.txt"
     log_file_path = log_file_directory + log_file_name
     data = read_log_data(log_file_path)
