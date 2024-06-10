@@ -151,7 +151,7 @@ Axis2D = Literal["x", "y"]
 def rotate_trajectory_to_optimal_alignment_using_map(
     acc_df: pd.DataFrame,
     angle_df: pd.DataFrame,
-    map_dict: dict[str, np.ndarray],
+    floor_map_dict: dict[str, np.ndarray],
     floor_name: str,
     dx: float,
     dy: float,
@@ -164,7 +164,7 @@ def rotate_trajectory_to_optimal_alignment_using_map(
     ----
         acc_df (pd.DataFrame): The accelerometer data.
         angle_df (pd.DataFrame): The angle data.
-        map_dict (dict[str, np.ndarray]): The edit map dictionary.
+        floor_map_dict (dict[str, np.ndarray]): The edit map dictionary.
         floor_name (str): The floor name.
         dx (float): The x-axis resolution.
         dy (float): The y-axis resolution.
@@ -178,7 +178,7 @@ def rotate_trajectory_to_optimal_alignment_using_map(
     if ground_truth_first_point is None:
         ground_truth_first_point = {"x": 0.0, "y": 0.0}
 
-    if floor_name not in map_dict:
+    if floor_name not in floor_map_dict:
         msg = f"floor_name '{floor_name}' is not a valid key in edit_map_dict"
         raise ValueError(
             msg,
@@ -192,7 +192,7 @@ def rotate_trajectory_to_optimal_alignment_using_map(
 
     optimal_angle = _find_best_alignment_angle(
         angle_df_in_step_timing,
-        map_dict,
+        floor_map_dict,
         floor_name,
         dx,
         dy,
