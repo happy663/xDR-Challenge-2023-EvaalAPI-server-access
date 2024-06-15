@@ -15,5 +15,9 @@
     },
     "code-runner.executorMap": {
         "python": "poetry run python3 -u"
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.ruff_cache": true
     }
 }
