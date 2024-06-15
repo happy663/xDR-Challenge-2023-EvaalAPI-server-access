@@ -26,7 +26,7 @@ FOLDER_ID = "1qZBLQ66_pwRwLOy3Zj5q_qAwY_Z05HXb"
 
 
 def _main() -> None:
-    log_file_directory = "../../dataset/trials"
+    log_file_directory = "../../dataset/sample-trials/"
     log_file_name = "4_1_51_pdr.txt"
     log_file_path = log_file_directory + log_file_name
     data = read_log_data(log_file_path)
@@ -39,11 +39,12 @@ def _main() -> None:
         "y": ground_truth_df["y"][0],
     }
 
-    trajectory, _ = estimate_trajectory(
+    _, trajectory = estimate_trajectory(
         acc_df,
         gyro_df,
         ground_truth_first_point=true_point,
     )
+
     utils.plot_displacement_map(map_dict, "FLU01", 0.01, 0.01, trajectory)
 
 
@@ -204,7 +205,7 @@ def estimate_trajectory(
 
     Returns:
     -------
-        tuple[pd.DataFrame, pd.DataFrame]: Tuple containing the estimated trajectory and estimated angle.
+        tuple[pd.DataFrame, pd.DataFrame]: Tuple containing the estimated angle and estimated trajectory.
 
     """
     if ground_truth_first_point is None:

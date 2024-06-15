@@ -171,12 +171,6 @@ def rotate_trajectory_to_optimal_alignment_using_ble_fingerprint(
         .reset_index(drop=True)
     )
 
-    print(
-        delete_nan_merged_beacon_stats_df.to_csv(
-            "delete_nan_merged_beacon_stats_df.csv"
-        )
-    )
-
     optimal_angle = ble.search_optimal_angle(
         first_time_remove_drift_angle_displacement,
         delete_nan_merged_beacon_stats_df,
@@ -185,7 +179,6 @@ def rotate_trajectory_to_optimal_alignment_using_ble_fingerprint(
             "y": ground_truth_first_point["y"],
         },
     )
-    print(optimal_angle)
 
     rotated_optimal_angle_df = pd.DataFrame(
         {
