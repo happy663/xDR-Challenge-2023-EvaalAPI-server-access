@@ -7,6 +7,7 @@
 token.json
 __pycache__/
 beacon_reception_events.csv
-sample-trials
+sample_trials
 evaluation_data
 gt
+scoring
