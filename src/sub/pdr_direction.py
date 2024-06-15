@@ -15,7 +15,6 @@ import utils
 
 # fmt: on
 
-
 def _calculate_horizontal_and_vertical_counts(
     angle_df: pd.DataFrame,
     rotate_angle: float,
