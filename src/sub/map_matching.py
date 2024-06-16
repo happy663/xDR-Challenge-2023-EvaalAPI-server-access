@@ -261,7 +261,6 @@ def move_unwalkable_points_to_walkable2(
             dx,
             dy,
         ):
-            print(index)
             # 進行方向の誤差補正係数
             direction_error_coefficient = np.arange(0.9, 1.1, 0.01)
             # 歩幅の誤差補正係数
@@ -305,9 +304,7 @@ def move_unwalkable_points_to_walkable2(
 
                         break
 
-            print(coefficient_combinations)
             centroid_coefficient = calculate_centroid(coefficient_combinations)
-            print(centroid_coefficient)
 
             # ここで軌跡を補正が完了したものに置き換える
             corrected_displacement_df = estimate.calculate_cumulative_displacement(
@@ -380,7 +377,6 @@ sample_df = pd.DataFrame(
 
 step_lengths = np.array([1, 2, 3, 4])
 result = sample_df["x"][: len(step_lengths)] * step_lengths
-print(result)
 
 
 # result_df = calculate_cumulative_displacement(

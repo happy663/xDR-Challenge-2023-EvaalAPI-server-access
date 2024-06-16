@@ -215,7 +215,9 @@ def estimate_trajectory(
     # ジャイロデータを用いてステップタイミングでの角度を推定
     peek_angle = estimate.convert_to_peek_angle(gyro_df, acc_df, peaks)
     # 累積変位の計算
-    return peek_angle, estimate.calculate_cumulative_displacement(
+    return estimate.convert_to_angle_from_gyro(
+        gyro_df,
+    ), estimate.calculate_cumulative_displacement(
         peek_angle.ts,
         peek_angle["x"],
         0.5,
