@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import heapq
 from collections import deque
 from typing import Literal
 
@@ -38,6 +39,7 @@ def is_passable(
     return passable
 
 
+# 幅優先探索による歩行可能座標の最短経路探索
 def find_nearest_passable_point(
     passable_dict: dict[str, np.ndarray],
     floor_name: str,
@@ -84,6 +86,71 @@ def find_nearest_passable_point(
     return None
 
 
+# 斜め移動を考慮したダイクストラ法による最短経路探索
+def find_nearest_passable_point_dijkstra(
+    passable_dict: dict[str, np.ndarray],
+    floor_name: str,
+    start_x: float,
+    start_y: float,
+    dx: float,
+    dy: float,
+) -> tuple[float, float] | None:
+    # グリッド座標に変換
+    start_row = int(start_x / dx)
+    start_col = int(start_y / dy)
+
+    # 優先キューと訪問セットの初期化
+    priority_queue = [(0, start_row, start_col)]  # (コスト, 行, 列)
+    to_visit: set[tuple[int, int]] = set()
+    to_visit.add((start_row, start_col))
+
+    # 範囲チェック
+    if (
+        start_row < 0
+        or start_col < 0
+        or start_row >= passable_dict[floor_name].shape[0]
+        or start_col >= passable_dict[floor_name].shape[1]
+    ):
+        return None
+
+    # 方向と重みの設定
+    directions = [
+        ((-1, 0), 1),  # 上, 重み1
+        ((1, 0), 1),  # 下, 重み1
+        ((0, -1), 1),  # 左, 重み1
+        ((0, 1), 1),  # 右, 重み1
+        ((-1, -1), np.sqrt(2)),  # 左上, 重み√2
+        ((-1, 1), np.sqrt(2)),  # 右上, 重み√2
+        ((1, -1), np.sqrt(2)),  # 左下, 重み√2
+        ((1, 1), np.sqrt(2)),  # 右下, 重み√2
+    ]
+
+    # 幅優先探索
+    while priority_queue:
+        current_cost, current_row, current_col = heapq.heappop(priority_queue)
+
+        # 通行可能な点を見つけた場合
+        if passable_dict[floor_name][current_row, current_col]:
+            return current_row * dx, current_col * dy
+
+        # 隣接する位置のチェック
+        for direction, weight in directions:
+            neighbor_row = current_row + direction[0]
+            neighbor_col = current_col + direction[1]
+            new_cost = current_cost + weight
+
+            if (
+                0 <= neighbor_row < passable_dict[floor_name].shape[0]
+                and 0 <= neighbor_col < passable_dict[floor_name].shape[1]
+                and (neighbor_row, neighbor_col) not in to_visit
+            ):
+                heapq.heappush(priority_queue, (new_cost, neighbor_row, neighbor_col))
+                to_visit.add((neighbor_row, neighbor_col))
+
+    # 通行可能な点が見つからない場合
+    return None
+
+
 def correct_displacement(
     corrected_displacement_df: pd.DataFrame,
     map_dict: dict[str, np.ndarray],
@@ -98,7 +165,7 @@ def correct_displacement(
         "y": nearest_row["y_displacement"],
     }
 
-    corrected_point = find_nearest_passable_point(
+    corrected_point = find_nearest_passable_point_dijkstra(
         map_dict,
         floor_name,
         nearest_row["x_displacement"],
@@ -135,12 +202,8 @@ def move_unwalkable_points_to_walkable(
     floor_name: str,
     dx: float,
     dy: float,
-    *,
-    ground_truth_first_point: dict[Axis2D, float] | None = None,
+    ground_truth_first_point: dict[Axis2D, float],
 ) -> pd.DataFrame:
-    if ground_truth_first_point is None:
-        ground_truth_first_point = {"x": 0.0, "y": 0.0}
-
     # 歩行タイミングの角度を求める
     angle_df_in_step_timing = utils.convert_to_peek_angle(
         acc_df,
@@ -364,24 +427,3 @@ def calculate_cumulative_displacement(
             ),
         ],
     )
-
-
-# Example data
-
-sample_df = pd.DataFrame(
-    {
-        "ts": [0, 1, 2, 3, 4],
-        "x": [1, 1, 1, 1, 1],
-    },
-)
-
-step_lengths = np.array([1, 2, 3, 4])
-result = sample_df["x"][: len(step_lengths)] * step_lengths
-
-
-# result_df = calculate_cumulative_displacement(
-#     ts,
-#     angle_data_x,
-#     step_lengths,
-#     initial_point,
-# )
