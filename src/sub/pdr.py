@@ -8,7 +8,6 @@ from typing import Literal
 import pandera as pa
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-
 import estimate
 import numpy as np
 import pandas as pd

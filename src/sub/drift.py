@@ -66,8 +66,20 @@ def _search_optimal_drift_from_angle(
             {"drift": drift, "euclidean_distance": euclidean_distance},
         )
 
-    return min(
+    # 絶対値が0.01以上のドリフトを除外
+    drift_and_euclidean_list = [
+        drift_and_euclidean
+        for drift_and_euclidean in drift_and_euclidean_list
+        if abs(drift_and_euclidean["drift"]) < 0.01
+    ]
+
+    sorted_drift_and_euclidean_list = sorted(
         drift_and_euclidean_list,
+        key=lambda x: x["euclidean_distance"],
+    )
+
+    return min(
+        sorted_drift_and_euclidean_list,
         key=lambda x: x["euclidean_distance"],
     )
 

@@ -83,9 +83,9 @@ def plot_displacement_map(
     )
 
     # カラーバーの追加
-    colorbar = plt.colorbar(scatter)
-    colorbar.ax.tick_params(labelsize=label_size)
-    colorbar.set_label("t (s)", fontsize=label_size)
+    # colorbar = plt.colorbar(scatter)
+    # colorbar.ax.tick_params(labelsize=label_size)
+    # colorbar.set_label("t (s)", fontsize=label_size)
 
     # プロットの表示
     plt.show()
